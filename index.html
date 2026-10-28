@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>LifeSync Pro — Diary, Break, Hydration & Meds</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '"Hind Siliguri"', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    html, body {
+      font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
+      overflow-x: hidden;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    /* Prevent any text overflow globally */
+    p, h1, h2, h3, h4, span, div, button {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.35);
+      border-radius: 9999px;
+    }
+    /* Adaptive Glass Surfaces for Light & Dark Mode */
+    .app-card {
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .dark .app-card {
+      background-color: rgba(30, 41, 59, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+    }
+    .app-nav {
+      background-color: rgba(255, 255, 255, 0.92);
+      border-color: rgba(226, 232, 240, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .dark .app-nav {
+      background-color: rgba(15, 23, 42, 0.9);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .app-input {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+    }
+    .dark .app-input {
+      background-color: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      color: #f8fafc;
+    }
+    .app-subcard {
+      background-color: #f1f5f9;
+      border: 1px solid #e2e8f0;
+    }
+    .dark .app-subcard {
+      background-color: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    @keyframes ringShake {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(14deg); }
+      40% { transform: rotate(-14deg); }
+      60% { transform: rotate(10deg); }
+      80% { transform: rotate(-10deg); }
+    }
+    .ring-shake {
+      animation: ringShake 0.7s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-100 text-slate-800 dark:bg-[#090d16] dark:text-slate-100 transition-colors duration-200 selection:bg-indigo-500 selection:text-white">
+
+  <!-- ALARM RINGING MODAL OVERLAY -->
+  <div id="alarmOverlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-indigo-500/40 p-6 text-center shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-indigo-500/15 border border-indigo-400/40 flex items-center justify-center mx-auto mb-3 text-3xl text-indigo-500 dark:text-indigo-400 ring-shake">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <span id="alarmBadge" class="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 mb-2">Reminder Alarm</span>
+      <h2 id="alarmTitle" class="text-xl font-extrabold text-slate-900 dark:text-white mb-1.5 leading-snug">Time for Action!</h2>
+      <p id="alarmSubtitle" class="text-xs text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">Please complete your scheduled task.</p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button onclick="snoozeActiveAlarm()" class="py-3 px-3 rounded-2xl bg-slate-200 dark:bg-slate-800 hover: opacity-90 text-slate-800 dark:text-slate-200 font-bold text-xs transition active:scale-95">
+          <i class="fa-regular fa-clock mr-1"></i> 5m Snooze
+        </button>
+        <button onclick="completeActiveAlarm()" class="py-3 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs shadow-lg shadow-indigo-500/30 transition active:scale-95">
+          <i class="fa-solid fa-check mr-1"></i> Done Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed top-3 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 w-[92%] max-w-md pointer-events-none"></div>
+
+  <!-- TOP HEADER BAR -->
+  <header class="sticky top-0 z-40 app-nav border-b px-3.5 py-2.5">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md shadow-indigo-500/20">
+          <i class="fa-solid fa-heart-pulse text-white text-base"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <h1 class="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white truncate">LifeSync <span class="text-indigo-600 dark:text-indigo-400">Pro</span></h1>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">v2.5</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+            <span id="headerDateText">Loading...</span>
+            <span>•</span>
+            <span id="liveClockText" class="font-mono font-bold text-indigo-600 dark:text-indigo-400">--:--:--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Theme Toggle Button (Light / Dark) -->
+        <button onclick="toggleTheme()" id="themeToggleBtn" title="Switch Light/Dark Theme" class="w-9 h-9 rounded-xl app-card flex items-center justify-center text-slate-700 dark:text-amber-300 active:scale-95 transition">
+          <i id="themeToggleIcon" class="fa-solid fa-sun text-sm"></i>
+        </button>
+
+        <!-- Test Alarm Button -->
+        <button onclick="triggerTestAlarm()" title="Test Alarm" class="w-9 h-9 rounded-xl app-card flex items-center justify-center text-indigo-600 dark:text-indigo-400 active:scale-95 transition">
+          <i class="fa-solid fa-bell text-sm"></i>
+        </button>
+
+        <!-- Quick OTA Update Tab Shortcut -->
+        <button onclick="switchTab('settings')" class="px-2.5 py-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+          <span class="hidden xs:inline">Update</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 max-w-md w-full mx-auto px-3.5 pt-3.5 pb-28 space-y-4">
+
+    <!-- ==================== TAB 1: DASHBOARD & SMART DIARY ==================== -->
+    <section id="tab-diary" class="tab-panel space-y-4">
+      <!-- Real-Time Daily Summary Cards (No Overflow Grid) -->
+      <div class="grid grid-cols-3 gap-2">
+        <div onclick="switchTab('water')" class="app-card rounded-2xl p-2.5 cursor-pointer hover:border-cyan-500/50 transition min-w-0">
+          <div class="flex items-center justify-between text-cyan-600 dark:text-cyan-400 mb-1">
+            <i class="fa-solid fa-glass-water text-xs"></i>
+            <span id="dashWaterPct" class="text-[10px] font-extrabold">0%</span>
+          </div>
+          <p id="dashWaterVal" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">0 / 0 ml</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">পানির হিসাব</p>
+        </div>
+
+        <div onclick="switchTab('meds')" class="app-card rounded-2xl p-2.5 cursor-pointer hover:border-rose-500/50 transition min-w-0">
+          <div class="flex items-center justify-between text-rose-600 dark:text-rose-400 mb-1">
+            <i class="fa-solid fa-pills text-xs"></i>
+            <span id="dashMedsNext" class="text-[10px] font-extrabold truncate">No Meds</span>
+          </div>
+          <p id="dashMedsVal" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">0 / 0 ডোজ</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">ওষুধ রিমাইন্ডার</p>
+        </div>
+
+        <div onclick="switchTab('break')" class="app-card rounded-2xl p-2.5 cursor-pointer hover:border-amber-500/50 transition min-w-0">
+          <div class="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-1">
+            <i class="fa-solid fa-mug-hot text-xs"></i>
+            <span id="dashBreakStatus" class="text-[10px] font-extrabold">Ready</span>
+          </div>
+          <p id="dashBreakCount" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">0 ব্রেক</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">বিশ্রাম টাইমার</p>
+        </div>
+      </div>
+
+      <!-- New Diary Entry Card -->
+      <div class="app-card rounded-3xl p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i class="fa-solid fa-book-open text-indigo-500"></i>
+            <span>আজকের রিয়েল-টাইম ডায়েরি ও নোট</span>
+          </h2>
+          <button onclick="startVoiceDictation()" id="voiceBtn" class="px-2.5 py-1 rounded-lg app-subcard text-slate-700 dark:text-slate-200 text-[11px] font-semibold flex items-center gap-1.5 active:scale-95 transition">
+            <i class="fa-solid fa-microphone text-rose-500"></i> Voice Type
+          </button>
+        </div>
+
+        <!-- Mood Selector (Responsive Flex Wrap to prevent text overlap) -->
+        <div>
+          <label class="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1.5">আজ তোমার মুড কেমন?</label>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5" id="moodSelector">
+            <button type="button" onclick="selectMood('😊 ফুরফুরে')" data-mood="😊 ফুরফুরে" class="mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border transition truncate">😊 ফুরফুরে</button>
+            <button type="button" onclick="selectMood('🔥 প্রোডাক্টিভ')" data-mood="🔥 প্রোডাক্টিভ" class="mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border transition truncate">🔥 কাজের মুড</button>
+            <button type="button" onclick="selectMood('😌 শান্ত')" data-mood="😌 শান্ত" class="mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border transition truncate">😌 শান্ত</button>
+            <button type="button" onclick="selectMood('😴 ক্লান্ত')" data-mood="😴 ক্লান্ত" class="mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border transition truncate">😴 ক্লান্ত</button>
+            <button type="button" onclick="selectMood('😔 উদাস')" data-mood="😔 উদাস" class="mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border transition truncate col-span-2 sm:col-span-1">😔 উদাস</button>
+          </div>
+        </div>
+
+        <input id="diaryTitle" type="text" placeholder="ডায়েরির শিরোনাম বা কাজের নোটের নাম..." class="w-full px-3 py-2.5 rounded-xl app-input text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
+
+        <textarea id="diaryContent" rows="4" placeholder="তোমার মনের কথা, প্রতিদিনের ঘটনা, অথবা ব্রেকের আইডিয়াগুলো এখানে লিখে রাখো..." class="w-full px-3 py-2.5 rounded-xl app-input text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"></textarea>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
+          <select id="diaryCategory" class="px-3 py-2.5 rounded-xl app-input text-xs font-semibold focus:outline-none focus:border-indigo-500">
+            <option value="Personal Diary">📔 Personal Diary (ব্যক্তিগত)</option>
+            <option value="Break Note">☕ Break Reflection (ব্রেক নোট)</option>
+            <option value="Doctor & Health">🩺 Doctor / Health Note (স্বাস্থ্য)</option>
+            <option value="Work & Goals">🚀 Work & Goals (কাজের লক্ষ্য)</option>
+          </select>
+
+          <button onclick="saveDiaryEntry()" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> ডায়েরিতে সেভ করো
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filter Diary -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input id="diarySearch" oninput="renderDiaryList()" type="text" placeholder="তোমার সেভ করা ডায়েরি বা নোট খুঁজুন..." class="w-full pl-9 pr-3.5 py-2.5 rounded-2xl app-card text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
+      </div>
+
+      <!-- Real-Time Diary Entries List -->
+      <div id="diaryListContainer" class="space-y-2.5"></div>
+    </section>
+
+    <!-- ==================== TAB 2: SMART BREAK & POMODORO ==================== -->
+    <section id="tab-break" class="tab-panel hidden space-y-4">
+      <div class="app-card rounded-3xl p-4 sm:p-5 text-center space-y-4">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+            <i class="fa-solid fa-mug-saucer mr-1"></i> Break & Focus Timer
+          </span>
+          <span id="breakModeLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">Tea & Mind Break (15m)</span>
+        </div>
+
+        <!-- Circular Countdown Display -->
+        <div class="relative w-44 h-44 mx-auto flex items-center justify-center rounded-full app-subcard border-4 border-amber-500/40 shadow-inner p-4">
+          <div class="text-center min-w-0">
+            <p id="breakTimerDisplay" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white font-mono">15:00</p>
+            <p id="breakPhaseText" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-semibold leading-snug">ব্রেক শুরু করার জন্য প্রস্তুত</p>
+          </div>
+        </div>
+
+        <!-- Preset Break Modes (2x2 Grid on small phones to prevent cramping) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button onclick="setBreakPreset(5, 'Eye Rest (5m)')" class="p-2.5 rounded-xl app-subcard hover:border-amber-500/50 text-xs font-bold text-slate-800 dark:text-slate-200 active:scale-95 transition">
+            👀 5 Min<br><span class="text-[10px] font-normal text-slate-500 dark:text-slate-400">চোখের বিশ্রাম</span>
+          </button>
+          <button onclick="setBreakPreset(15, 'Tea Break (15m)')" class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs font-bold text-amber-700 dark:text-amber-300 active:scale-95 transition">
+            ☕ 15 Min<br><span class="text-[10px] font-normal">চা ও বিরতি</span>
+          </button>
+          <button onclick="setBreakPreset(25, 'Pomodoro (25m)')" class="p-2.5 rounded-xl app-subcard hover:border-amber-500/50 text-xs font-bold text-slate-800 dark:text-slate-200 active:scale-95 transition">
+            🎯 25 Min<br><span class="text-[10px] font-normal text-slate-500 dark:text-slate-400">ডিপ ফোকাস</span>
+          </button>
+          <button onclick="setBreakPreset(45, 'Power Rest (45m)')" class="p-2.5 rounded-xl app-subcard hover:border-amber-500/50 text-xs font-bold text-slate-800 dark:text-slate-200 active:scale-95 transition">
+            ⚡ 45 Min<br><span class="text-[10px] font-normal text-slate-500 dark:text-slate-400">লাঞ্চ/পাওয়ার ন্যাপ</span>
+          </button>
+        </div>
+
+        <!-- Custom Minutes Input -->
+        <div class="flex items-center gap-2">
+          <input id="customBreakMins" type="number" min="1" max="180" placeholder="কাস্টম মিনিট (যেমন: 10)" class="flex-1 px-3 py-2 rounded-xl app-input text-xs focus:outline-none focus:border-amber-500" />
+          <button onclick="setCustomBreakTime()" class="px-3.5 py-2 rounded-xl app-subcard text-xs font-bold text-amber-600 dark:text-amber-400 active:scale-95 transition">
+            Set Time
+          </button>
+        </div>
+
+        <!-- Timer Action Buttons -->
+        <div class="flex items-center gap-2.5">
+          <button id="breakStartBtn" onclick="toggleBreakTimer()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/25 active:scale-95 transition">
+            <i class="fa-solid fa-play mr-1.5"></i> Start Timer
+          </button>
+          <button onclick="resetBreakTimer()" class="px-4 py-3 rounded-2xl app-subcard text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Healthy Break Guide -->
+      <div class="app-card rounded-3xl p-4 space-y-2.5">
+        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">ব্রেকের সময় সুস্থ থাকার নিয়ম</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div class="p-3 rounded-2xl app-subcard flex items-start gap-2.5">
+            <i class="fa-solid fa-eye text-cyan-500 text-sm mt-0.5 shrink-0"></i>
+            <span class="leading-relaxed">২০ ফুট দূরে ২০ সেকেন্ড তাকিয়ে চোখের পেশিকে আরাম দাও।</span>
+          </div>
+          <div class="p-3 rounded-2xl app-subcard flex items-start gap-2.5">
+            <i class="fa-solid fa-glass-water text-blue-500 text-sm mt-0.5 shrink-0"></i>
+            <span class="leading-relaxed">প্রতি ব্রেকের সময় অন্তত ১ গ্লাস (250ml) পানি পান করো।</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: HYDRATION & VESSEL TRACKER ==================== -->
+    <section id="tab-water" class="tab-panel hidden space-y-4">
+      <div class="app-card rounded-3xl p-4 space-y-3.5">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div class="min-w-0">
+            <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-droplet text-cyan-500"></i>
+              <span>বয়স ও ওজন অনুযায়ী পানির হিসাব</span>
+            </h2>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">তোমার বয়স ও ওজন দিলে অটোমেটিক ডেইলি লক্ষ্যমাত্রা সেট হবে</p>
+          </div>
+          <span id="waterRecommendedBadge" class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shrink-0">0.0 L / day</span>
+        </div>
+
+        <!-- Age, Weight & Activity Inputs -->
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">বয়স (বছর)</label>
+            <input id="userAgeInput" type="number" min="5" max="110" placeholder="যেমন: 24" oninput="updateWaterProfile()" class="w-full px-2.5 py-2 rounded-xl app-input text-xs sm:text-sm font-bold focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">ওজন (কেজি)</label>
+            <input id="userWeightInput" type="number" min="15" max="200" placeholder="যেমন: 65" oninput="updateWaterProfile()" class="w-full px-2.5 py-2 rounded-xl app-input text-xs sm:text-sm font-bold focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">পরিশ্রম</label>
+            <select id="userActivityInput" onchange="updateWaterProfile()" class="w-full px-2 py-2 rounded-xl app-input text-xs font-semibold focus:outline-none focus:border-cyan-500">
+              <option value="0">সাধারণ</option>
+              <option value="350">মাঝারি</option>
+              <option value="700">বেশি ঘাম/জিম</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Progress Tank -->
+        <div class="p-3.5 rounded-2xl app-subcard space-y-2">
+          <div class="flex items-end justify-between gap-2 flex-wrap">
+            <div>
+              <p class="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold">আজ পান করা হয়েছে</p>
+              <p class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+                <span id="waterCurrentMl">0</span>
+                <span class="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">/ <span id="waterGoalMl">2400</span> ml</span>
+              </p>
+            </div>
+            <span id="waterRemainText" class="text-xs font-bold text-cyan-600 dark:text-cyan-400">লক্ষ্যমাত্রা বাকি</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-300 dark:bg-slate-800 overflow-hidden">
+            <div id="waterProgressBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <p id="waterScheduleHint" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+            <i class="fa-regular fa-bell text-cyan-500 mr-1"></i>
+            <span>সকাল ৭টা থেকে রাত ১১টার মধ্যে প্রতি ঘণ্টায় ১ গ্লাস (250ml) পানি পান করা উত্তম।</span>
+          </p>
+        </div>
+
+        <!-- Vessel Selector (Kon Glass ba Botol e Pani Khacchi) -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <label class="text-xs font-extrabold text-slate-900 dark:text-white">তুমি কিসে করে পানি খাচ্ছ? (ট্যাপ করো)</label>
+            <button onclick="resetTodayWater()" class="text-[11px] font-semibold text-rose-500 hover:underline">আজকের হিসাব রিসেট</button>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button onclick="logWaterIntake(150, 'ছোট কাপ (150ml)')" class="p-2.5 rounded-2xl app-subcard hover:border-cyan-500 text-center active:scale-95 transition">
+              <i class="fa-solid fa-mug-hot text-cyan-500 text-base mb-1"></i>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">ছোট কাপ</p>
+              <p class="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold">+150 ml</p>
+            </button>
+            <button onclick="logWaterIntake(250, 'মাঝারি গ্লাস (250ml)')" class="p-2.5 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-center active:scale-95 transition">
+              <i class="fa-solid fa-glass-water text-cyan-600 dark:text-cyan-300 text-base mb-1"></i>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">মাঝারি গ্লাস</p>
+              <p class="text-[11px] text-cyan-600 dark:text-cyan-300 font-bold">+250 ml</p>
+            </button>
+            <button onclick="logWaterIntake(350, 'বড় গ্লাস/মগ (350ml)')" class="p-2.5 rounded-2xl app-subcard hover:border-cyan-500 text-center active:scale-95 transition">
+              <i class="fa-solid fa-beer-mug-empty text-cyan-500 text-base mb-1"></i>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">বড় গ্লাস/মগ</p>
+              <p class="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold">+350 ml</p>
+            </button>
+            <button onclick="logWaterIntake(500, 'ছোট বোতল (500ml)')" class="p-2.5 rounded-2xl app-subcard hover:border-cyan-500 text-center active:scale-95 transition">
+              <i class="fa-solid fa-bottle-water text-blue-500 text-base mb-1"></i>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">হাফ লিটার বোতল</p>
+              <p class="text-[11px] text-blue-600 dark:text-blue-400 font-bold">+500 ml</p>
+            </button>
+            <button onclick="logWaterIntake(1000, 'বড় বোতল (1000ml)')" class="p-2.5 rounded-2xl app-subcard hover:border-cyan-500 text-center active:scale-95 transition">
+              <i class="fa-solid fa-prescription-bottle text-indigo-500 text-base mb-1"></i>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">১ লিটার বোতল</p>
+              <p class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold">+1000 ml</p>
+            </button>
+            <div class="p-2 rounded-2xl app-subcard flex flex-col justify-between gap-1.5">
+              <input id="customWaterMl" type="number" placeholder="Custom ml" class="w-full px-2 py-1 rounded-lg app-input text-xs text-center focus:outline-none" />
+              <button onclick="logCustomWater()" class="w-full py-1.5 rounded-lg bg-cyan-600 text-white text-[11px] font-bold active:scale-95 transition">
+                + যোগ করো
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Periodic Water Alarm Toggle -->
+        <div class="p-3 rounded-2xl app-subcard flex items-center justify-between gap-2 flex-wrap">
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-slate-900 dark:text-white">পানি খাওয়ার অটো অ্যালার্ম</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">নির্দিষ্ট সময় পরপর রিমাইন্ডার বাজবে</p>
+          </div>
+          <select id="waterIntervalSelect" onchange="saveWaterInterval()" class="px-2.5 py-1.5 rounded-xl app-input text-xs font-bold text-cyan-600 dark:text-cyan-300">
+            <option value="0">বন্ধ (Off)</option>
+            <option value="30">প্রতি ৩০ মিনিট</option>
+            <option value="60">প্রতি ১ ঘণ্টা</option>
+            <option value="90">প্রতি ১.৫ ঘণ্টা</option>
+            <option value="120">প্রতি ২ ঘণ্টা</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Today's Real-Time Vessel Log -->
+      <div class="app-card rounded-3xl p-4 space-y-2.5">
+        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">আজ কখন কোন পাত্রে পানি খেয়েছ</h3>
+        <div id="waterHistoryList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: DOCTOR PRESCRIPTION & MEDICINE ALARM ==================== -->
+    <section id="tab-meds" class="tab-panel hidden space-y-4">
+      <div class="app-card rounded-3xl p-4 space-y-3">
+        <div>
+          <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i class="fa-solid fa-capsules text-rose-500"></i>
+            <span>ডাক্তারের প্রেসক্রিপশন ও ওষুধের অ্যালার্ম</span>
+          </h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">কোন ওষুধ কখন খেতে হবে তা সেট করলে সঠিক সময়ে অ্যালার্ম বাজবে</p>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input id="medNameInput" type="text" placeholder="ওষুধের নাম (যেমন: Napa / Losectil)" class="w-full px-3 py-2.5 rounded-xl app-input text-xs placeholder-slate-400 focus:outline-none focus:border-rose-500" />
+            <input id="medDoseInput" type="text" placeholder="ডোজ (যেমন: ১টি ট্যাবলেট / ১ চামচ)" class="w-full px-3 py-2.5 rounded-xl app-input text-xs placeholder-slate-400 focus:outline-none focus:border-rose-500" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">ওষুধ খাওয়ার সময় (Alarm Time)</label>
+              <input id="medTimeInput" type="time" value="09:00" class="w-full px-3 py-2 rounded-xl app-input text-xs font-bold focus:outline-none focus:border-rose-500" />
+            </div>
+            <div>
+              <label class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">খাবার নিয়ম (Instruction)</label>
+              <select id="medMealRule" class="w-full px-3 py-2 rounded-xl app-input text-xs font-semibold focus:outline-none focus:border-rose-500">
+                <option value="খাবার পরে (After Meal)">🍽️ খাবার পরে (After Meal)</option>
+                <option value="খাবার ৩০ মি. আগে (Before Meal)">⏳ খাবার আগে (Before Meal)</option>
+                <option value="খালি পেটে (Empty Stomach)">🌅 সকালে খালি পেটে</option>
+                <option value="ঘুমানোর আগে (Before Sleep)">🌙 ঘুমানোর আগে</option>
+              </select>
+            </div>
+          </div>
+
+          <input id="medDoctorNote" type="text" placeholder="ডাক্তারের নাম বা বিশেষ নোট (ঐচ্ছিক)..." class="w-full px-3 py-2 rounded-xl app-input text-xs placeholder-slate-400 focus:outline-none focus:border-rose-500" />
+
+          <button onclick="addMedicineSchedule()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white font-bold text-xs shadow-md shadow-rose-500/25 active:scale-95 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-plus-circle"></i> ওষুধের অ্যালার্ম যোগ করো
+          </button>
+        </div>
+      </div>
+
+      <!-- Medicine Schedule List -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between gap-2 px-1 flex-wrap">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">তোমার ওষুধের রুটিন</h3>
+          <button onclick="resetDailyMedsTaken()" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">নতুন দিনের ডোজ রিসেট</button>
+        </div>
+        <div id="medsListContainer" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: OTA UPDATE, GITHUB YML COPY & BACKUP ==================== -->
+    <section id="tab-settings" class="tab-panel hidden space-y-4">
+      <!-- Live OTA Self-Updater Card -->
+      <div class="app-card rounded-3xl p-4 space-y-3">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 mb-1">
+            Zero-Uninstall Smart Updater
+          </span>
+          <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">অ্যাপের ভেতর থেকেই সরাসরি আপডেট (OTA + Signed APK)</h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+            পুরনো অ্যাপ আনইনস্টল করার কোনো প্রয়োজন নেই! তোমার GitHub রেপোজিটরি যুক্ত করে নিচের বাটনে ক্লিক করলেই নতুন আপডেট সরাসরি চলে আসবে।
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">GitHub Username / Repo (যেমন: `username/lifesync`)</label>
+            <input id="ghRepoInput" type="text" placeholder="username/repository-name" onchange="saveGithubConfig()" class="w-full px-3 py-2 rounded-xl app-input text-xs focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">Branch Name</label>
+            <input id="ghBranchInput" type="text" value="main" onchange="saveGithubConfig()" class="w-full px-3 py-2 rounded-xl app-input text-xs focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2 pt-1">
+          <button onclick="performLiveOtaUpdate()" id="otaSyncBtn" class="w-full py-3 px-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-bolt"></i>
+            <span>১-ক্লিক ইনস্ট্যান্ট লাইভ আপডেট (No Uninstall)</span>
+          </button>
+
+          <button onclick="downloadLatestReleaseApk()" class="w-full py-2.5 px-3 rounded-2xl app-subcard text-slate-800 dark:text-slate-200 font-bold text-xs active:scale-95 transition flex items-center justify-center gap-1.5">
+            <i class="fa-brands fa-android text-emerald-500 text-sm"></i>
+            <span>ডাউনলোড লেটেস্ট Signed APK (Direct Upgrade)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 1-Click Copy build-apk.yml inside the app -->
+      <div class="app-card rounded-3xl p-4 space-y-2.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h3 class="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i class="fa-brands fa-github text-indigo-500"></i>
+            <span>GitHub Actions `build-apk.yml` কোড</span>
+          </h3>
+          <button onclick="copyWorkflowYaml()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-[11px] font-bold active:scale-95 transition flex items-center gap-1">
+            <i class="fa-regular fa-copy"></i> Copy YAML Code
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+          তোমার GitHub রিপোজিটরিতে <code>.github/workflows/build-apk.yml</code> ফাইল তৈরি করে নিচের কোডটি পেস্ট করে দিলেই অটোমেটিক APK বিল্ড হবে।
+        </p>
+      </div>
+
+      <!-- Data Backup & Restore -->
+      <div class="app-card rounded-3xl p-4 space-y-2.5">
+        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">ডেটা ব্যাকআপ ও রিস্টোর</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportAllData()" class="py-2.5 px-3 rounded-xl app-subcard text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5 active:scale-95 transition">
+            <i class="fa-solid fa-download text-indigo-500"></i> ব্যাকআপ ডাউনলোড
+          </button>
+          <label class="py-2.5 px-3 rounded-xl app-subcard text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition">
+            <i class="fa-solid fa-upload text-emerald-500"></i> ডেটা রিস্টোর
+            <input type="file" accept=".json" onchange="importAllData(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 app-nav border-t px-2 py-1.5">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
+      <button onclick="switchTab('diary')" id="nav-diary" class="nav-btn flex flex-col items-center py-1.5 rounded-2xl transition">
+        <i class="fa-solid fa-book-journal-whills text-sm mb-0.5"></i>
+        <span class="text-[10px] font-bold">ডায়েরি</span>
+      </button>
+      <button onclick="switchTab('break')" id="nav-break" class="nav-btn flex flex-col items-center py-1.5 rounded-2xl transition">
+        <i class="fa-solid fa-mug-hot text-sm mb-0.5"></i>
+        <span class="text-[10px] font-bold">ব্রেক</span>
+      </button>
+      <button onclick="switchTab('water')" id="nav-water" class="nav-btn flex flex-col items-center py-1.5 rounded-2xl transition">
+        <i class="fa-solid fa-glass-water text-sm mb-0.5"></i>
+        <span class="text-[10px] font-bold">পানি</span>
+      </button>
+      <button onclick="switchTab('meds')" id="nav-meds" class="nav-btn flex flex-col items-center py-1.5 rounded-2xl transition">
+        <i class="fa-solid fa-pills text-sm mb-0.5"></i>
+        <span class="text-[10px] font-bold">ওষুধ</span>
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center py-1.5 rounded-2xl transition">
+        <i class="fa-solid fa-arrows-rotate text-sm mb-0.5"></i>
+        <span class="text-[10px] font-bold">আপডেট</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    /********************************************************************
+     * LIFESYNC PRO - 100% REAL-TIME STATE (NO DUMMY DATA)
+     ********************************************************************/
+    const STORAGE_KEY = 'LIFESYNC_PRO_STATE_V2';
+    const TODAY_STR = new Date().toISOString().slice(0, 10);
+
+    const defaultState = {
+      version: '2.5.0',
+      theme: 'dark', // 'dark' or 'light'
+      lastDate: TODAY_STR,
+      selectedMood: '😊 ফুরফুরে',
+      githubRepo: '',
+      githubBranch: 'main',
+      waterProfile: {
+        age: 25,
+        weight: 65,
+        activityExtra: 0,
+        dailyGoalMl: 2350,
+        intervalMinutes: 60,
+        lastDrinkTimestamp: Date.now()
+      },
+      waterToday: {
+        totalMl: 0,
+        logs: []
+      },
+      breakStats: {
+        completedToday: 0,
+        presetMinutes: 15,
+        presetLabel: 'Tea Break (15m)'
+      },
+      diaryEntries: [], // Strictly real user entries only
+      medicines: []     // Strictly real user prescriptions only
+    };
+
+    let appState = loadAppState();
+    let audioCtx = null;
+    let alarmSoundInterval = null;
+    let activeAlarmPayload = null;
+    let currentTab = 'diary';
+
+    // Break Timer Variables
+    let breakSecondsLeft = (appState.breakStats.presetMinutes || 15) * 60;
+    let breakIntervalId = null;
+    let isBreakRunning = false;
+
+    function loadAppState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+
+        // Remove any legacy sample/dummy entries automatically if present from older version
+        if (Array.isArray(parsed.diaryEntries)) {
+          parsed.diaryEntries = parsed.diaryEntries.filter(d => d.id !== 'welcome-note');
+        }
+        if (Array.isArray(parsed.medicines)) {
+          parsed.medicines = parsed.medicines.filter(m => m.id !== 'med-sample-1');
+        }
+
+        // Daily rollover check for water & medicine doses
+        if (parsed.lastDate !== TODAY_STR) {
+          parsed.lastDate = TODAY_STR;
+          parsed.waterToday = { totalMl: 0, logs: [] };
+          if (parsed.breakStats) parsed.breakStats.completedToday = 0;
+          if (Array.isArray(parsed.medicines)) {
+            parsed.medicines.forEach(m => { m.takenToday = false; });
+          }
+        }
+        return {
+          ...structuredClone(defaultState),
+          ...parsed,
+          waterProfile: { ...defaultState.waterProfile, ...(parsed.waterProfile || {}) },
+          waterToday: { ...defaultState.waterToday, ...(parsed.waterToday || {}) },
+          breakStats: { ...defaultState.breakStats, ...(parsed.breakStats || {}) }
+        };
+      } catch (e) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveAppState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        updateDashboardCounters();
+      } catch (e) {
+        console.error('Save failed:', e);
+      }
+    }
+
+    /********************************************************************
+     * LIGHT & DARK THEME ENGINE
+     ********************************************************************/
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      const icon = document.getElementById('themeToggleIcon');
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        if (icon) icon.className = 'fa-solid fa-moon text-sm text-indigo-600';
+      } else {
+        root.classList.add('dark');
+        if (icon) icon.className = 'fa-solid fa-sun text-sm text-amber-400';
+      }
+    }
+
+    function toggleTheme() {
+      appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(appState.theme);
+      saveAppState();
+      showToast(appState.theme === 'light' ? '☀️ Light Mode চালু করা হয়েছে' : '🌙 Dark Mode চালু করা হয়েছে', 'info');
+    }
+
+    /********************************************************************
+     * REAL-TIME CLOCK & LIVE HEADER
+     ********************************************************************/
+    function updateLiveClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('bn-BD', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      const dateStr = now.toLocaleDateString('bn-BD', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      });
+      const clockEl = document.getElementById('liveClockText');
+      const dateEl = document.getElementById('headerDateText');
+      if (clockEl) clockEl.textContent = timeStr;
+      if (dateEl) dateEl.textContent = dateStr;
+    }
+
+    /********************************************************************
+     * TOAST & SOUND ALARM ENGINE
+     ********************************************************************/
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const colors = {
+        info: 'border-indigo-500/50 bg-slate-900/95 text-indigo-200',
+        success: 'border-emerald-500/50 bg-slate-900/95 text-emerald-200',
+        warn: 'border-amber-500/50 bg-slate-900/95 text-amber-200'
+      };
+      const el = document.createElement('div');
+      el.className = `px-4 py-2.5 rounded-2xl border shadow-xl text-xs font-semibold flex items-center justify-between transition-all duration-300 ${colors[type] || colors.info}`;
+      el.innerHTML = `<span class="leading-snug">${message}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 3000);
+    }
+
+    function playChimeMelody() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.14);
+          gain.gain.setValueAtTime(0.22, audioCtx.currentTime + idx * 0.14);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.14 + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.14);
+          osc.stop(audioCtx.currentTime + idx * 0.14 + 0.36);
+        });
+      } catch (e) {
+        console.warn('Audio play blocked:', e);
+      }
+    }
+
+    function triggerAlarmModal({ badge, title, subtitle, type, metaId }) {
+      activeAlarmPayload = { badge, title, subtitle, type, metaId };
+      document.getElementById('alarmBadge').textContent = badge;
+      document.getElementById('alarmTitle').textContent = title;
+      document.getElementById('alarmSubtitle').textContent = subtitle;
+      const overlay = document.getElementById('alarmOverlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+
+      playChimeMelody();
+      if (alarmSoundInterval) clearInterval(alarmSoundInterval);
+      alarmSoundInterval = setInterval(playChimeMelody, 2500);
+
+      if (navigator.vibrate) {
+        navigator.vibrate([400, 200, 400, 200, 600]);
+      }
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body: subtitle });
+      }
+    }
+
+    function stopAlarmSound() {
+      if (alarmSoundInterval) {
+        clearInterval(alarmSoundInterval);
+        alarmSoundInterval = null;
+      }
+      const overlay = document.getElementById('alarmOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    function snoozeActiveAlarm() {
+      const savedPayload = activeAlarmPayload;
+      stopAlarmSound();
+      showToast('⏰ অ্যালার্মটি ৫ মিনিটের জন্য স্নুজ করা হয়েছে।', 'warn');
+      if (savedPayload) {
+        setTimeout(() => {
+          triggerAlarmModal(savedPayload);
+        }, 5 * 60 * 1000);
+      }
+    }
+
+    function completeActiveAlarm() {
+      if (activeAlarmPayload) {
+        if (activeAlarmPayload.type === 'water') {
+          logWaterIntake(250, 'অ্যালার্ম গ্লাস (250ml)');
+        } else if (activeAlarmPayload.type === 'med' && activeAlarmPayload.metaId) {
+          toggleMedTaken(activeAlarmPayload.metaId, true);
+        }
+      }
+      stopAlarmSound();
+    }
+
+    function triggerTestAlarm() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      triggerAlarmModal({
+        badge: '🔔 রিয়েল-টাইম অ্যালার্ম টেস্ট',
+        title: 'অ্যালার্ম ও সাউন্ড সিস্টেম সচল!',
+        subtitle: 'তোমার পানি পান এবং ওষুধের নির্ধারিত সময়ে ঠিক এভাবেই অ্যালার্ম বাজবে।',
+        type: 'test'
+      });
+    }
+
+    /********************************************************************
+     * NAVIGATION & DASHBOARD COUNTERS
+     ********************************************************************/
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = 'nav-btn flex flex-col items-center py-1.5 rounded-2xl text-slate-500 dark:text-slate-400 transition';
+      });
+      const activeBtn = document.getElementById(`nav-${tabName}`);
+      if (activeBtn) {
+        activeBtn.className = 'nav-btn flex flex-col items-center py-1.5 rounded-2xl text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 transition';
+      }
+    }
+
+    function updateDashboardCounters() {
+      const goal = appState.waterProfile.dailyGoalMl || 2400;
+      const currentWater = appState.waterToday.totalMl || 0;
+      const pct = Math.min(100, Math.round((currentWater / goal) * 100));
+      document.getElementById('dashWaterPct').textContent = `${pct}%`;
+      document.getElementById('dashWaterVal').textContent = `${currentWater}/${goal}ml`;
+
+      const totalMeds = appState.medicines.length;
+      const takenMeds = appState.medicines.filter(m => m.takenToday).length;
+      const pendingMed = [...appState.medicines]
+        .filter(m => !m.takenToday)
+        .sort((a, b) => a.time.localeCompare(b.time))[0];
+
+      document.getElementById('dashMedsNext').textContent = pendingMed ? `⏰ ${pendingMed.time}` : (totalMeds ? 'Done' : 'Empty');
+      document.getElementById('dashMedsVal').textContent = `${takenMeds}/${totalMeds} ডোজ`;
+
+      document.getElementById('dashBreakCount').textContent = `${appState.breakStats.completedToday || 0} ব্রেক`;
+    }
+
+    /********************************************************************
+     * TAB 1: SMART DIARY FUNCTIONS
+     ********************************************************************/
+    function selectMood(mood) {
+      appState.selectedMood = mood;
+      document.querySelectorAll('.mood-btn').forEach(btn => {
+        if (btn.dataset.mood === mood) {
+          btn.className = 'mood-btn py-1.5 px-2 rounded-xl text-[11px] font-bold border border-indigo-500 bg-indigo-500/20 text-indigo-700 dark:text-white transition truncate';
+        } else {
+          btn.className = 'mood-btn py-1.5 px-2 rounded-xl text-[11px] font-semibold border border-slate-300 dark:border-slate-700 app-subcard text-slate-600 dark:text-slate-300 transition truncate';
+        }
+      });
+    }
+
+    function saveDiaryEntry() {
+      const titleInput = document.getElementById('diaryTitle');
+      const contentInput = document.getElementById('diaryContent');
+      const categoryInput = document.getElementById('diaryCategory');
+
+      const title = titleInput.value.trim() || 'আজকের ডায়েরি নোট';
+      const content = contentInput.value.trim();
+
+      if (!content) {
+        showToast('অনুগ্রহ করে ডায়েরিতে কিছু লিখুন!', 'warn');
+        return;
+      }
+
+      const now = new Date();
+      appState.diaryEntries.unshift({
+        id: 'diary-' + Date.now(),
+        title,
+        content,
+        mood: appState.selectedMood,
+        category: categoryInput.value,
+        createdAt: now.toLocaleString('bn-BD', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      });
+
+      titleInput.value = '';
+      contentInput.value = '';
+      saveAppState();
+      renderDiaryList();
+      showToast('✨ তোমার ডায়েরি নোট সফলভাবে সেভ হয়েছে!', 'success');
+    }
+
+    function deleteDiaryEntry(id) {
+      appState.diaryEntries = appState.diaryEntries.filter(item => item.id !== id);
+      saveAppState();
+      renderDiaryList();
+      showToast('🗑️ ডায়েরি নোটটি মুছে ফেলা হয়েছে।', 'info');
+    }
+
+    function renderDiaryList() {
+      const container = document.getElementById('diaryListContainer');
+      const query = (document.getElementById('diarySearch')?.value || '').toLowerCase();
+
+      const filtered = appState.diaryEntries.filter(item =>
+        item.title.toLowerCase().includes(query) ||
+        item.content.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="app-card rounded-2xl p-6 text-center space-y-1.5">
+            <i class="fa-solid fa-feather-pointed text-indigo-400 text-xl"></i>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">এখনো কোনো ডায়েরি নোট লেখা হয়নি</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">উপরের বক্সে তোমার আজকের অনুভূতি বা কাজের নোট লিখে সেভ করো।</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="app-card rounded-2xl p-3.5 space-y-2 transition">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/25">${escapeHtml(item.category)}</span>
+                <span class="text-[11px] font-bold text-amber-600 dark:text-amber-300">${escapeHtml(item.mood)}</span>
+              </div>
+              <h4 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-snug break-words">${escapeHtml(item.title)}</h4>
+            </div>
+            <button onclick="deleteDiaryEntry('${item.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 text-xs shrink-0 transition">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">${escapeHtml(item.content)}</p>
+          <p class="text-[10px] text-slate-400 pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${escapeHtml(item.createdAt)}</p>
+        </div>
+      `).join('');
+    }
+
+    function startVoiceDictation() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast('তোমার ডিভাইসে ভয়েস টাইপিং সাপোর্ট করছে না।', 'warn');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'bn-BD';
+      const btn = document.getElementById('voiceBtn');
+      btn.innerHTML = '<i class="fa-solid fa-circle-dot text-rose-500 animate-ping"></i> শোনা হচ্ছে...';
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const box = document.getElementById('diaryContent');
+        box.value = (box.value ? box.value + ' ' : '') + transcript;
+      };
+      recognition.onend = () => {
+        btn.innerHTML = '<i class="fa-solid fa-microphone text-rose-500"></i> Voice Type';
+      };
+      recognition.start();
+    }
+
+    /********************************************************************
+     * TAB 2: SMART BREAK & POMODORO TIMER
+     ********************************************************************/
+    function formatMMSS(totalSeconds) {
+      const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const s = String(totalSeconds % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function setBreakPreset(minutes, label) {
+      if (isBreakRunning) {
+        clearInterval(breakIntervalId);
+        isBreakRunning = false;
+      }
+      appState.breakStats.presetMinutes = minutes;
+      appState.breakStats.presetLabel = label;
+      breakSecondsLeft = minutes * 60;
+      document.getElementById('breakModeLabel').textContent = label;
+      document.getElementById('breakTimerDisplay').textContent = formatMMSS(breakSecondsLeft);
+      document.getElementById('breakPhaseText').textContent = `${label} শুরু করার জন্য প্রস্তুত`;
+      document.getElementById('breakStartBtn').innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Start Timer';
+      document.getElementById('dashBreakStatus').textContent = 'Ready';
+      saveAppState();
+    }
+
+    function setCustomBreakTime() {
+      const inp = document.getElementById('customBreakMins');
+      const mins = Number(inp.value);
+      if (!mins || mins < 1 || mins > 240) {
+        showToast('১ থেকে ২৪০ মিনিটের মধ্যে সংখ্যা লিখুন', 'warn');
+        return;
+      }
+      setBreakPreset(mins, `Custom Break (${mins}m)`);
+      inp.value = '';
+      showToast(`⏱️ ${mins} মিনিটের ব্রেক টাইমার সেট করা হয়েছে`, 'success');
+    }
+
+    function toggleBreakTimer() {
+      const btn = document.getElementById('breakStartBtn');
+      if (isBreakRunning) {
+        clearInterval(breakIntervalId);
+        isBreakRunning = false;
+        btn.innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Resume';
+        document.getElementById('breakPhaseText').textContent = 'টাইমার পজ করা হয়েছে';
+        document.getElementById('dashBreakStatus').textContent = 'Paused';
+      } else {
+        isBreakRunning = true;
+        btn.innerHTML = '<i class="fa-solid fa-pause mr-1.5"></i> Pause';
+        document.getElementById('breakPhaseText').textContent = 'টাইমার চলছে...';
+        document.getElementById('dashBreakStatus').textContent = 'Running';
+        breakIntervalId = setInterval(() => {
+          breakSecondsLeft--;
+          const formatted = formatMMSS(Math.max(0, breakSecondsLeft));
+          document.getElementById('breakTimerDisplay').textContent = formatted;
+          document.getElementById('dashBreakStatus').textContent = formatted;
+
+          if (breakSecondsLeft <= 0) {
+            clearInterval(breakIntervalId);
+            isBreakRunning = false;
+            appState.breakStats.completedToday = (appState.breakStats.completedToday || 0) + 1;
+            saveAppState();
+            resetBreakTimer();
+            triggerAlarmModal({
+              badge: '☕ Break Timer Completed',
+              title: 'তোমার ব্রেক/ফোকাস সেশন শেষ হয়েছে!',
+              subtitle: '১ গ্লাস পানি খেয়ে নাও এবং চোখকে একটু বিশ্রাম দাও।',
+              type: 'break'
+            });
+          }
+        }, 1000);
+      }
+    }
+
+    function resetBreakTimer() {
+      if (breakIntervalId) clearInterval(breakIntervalId);
+      isBreakRunning = false;
+      breakSecondsLeft = (appState.breakStats.presetMinutes || 15) * 60;
+      document.getElementById('breakTimerDisplay').textContent = formatMMSS(breakSecondsLeft);
+      document.getElementById('breakStartBtn').innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Start Timer';
+      document.getElementById('breakPhaseText').textContent = 'ব্রেক শুরু করার জন্য প্রস্তুত';
+      document.getElementById('dashBreakStatus').textContent = 'Ready';
+    }
+
+    /********************************************************************
+     * TAB 3: SCIENTIFIC HYDRATION & VESSEL CALCULATOR
+     ********************************************************************/
+    function calculateScientificWaterGoal(age, weight, activityExtra) {
+      let factor = 35;
+      if (age < 18) factor = 40;
+      else if (age >= 18 && age <= 30) factor = 36;
+      else if (age > 30 && age <= 55) factor = 33;
+      else factor = 30;
+
+      const raw = Math.round((weight * factor + Number(activityExtra)) / 50) * 50;
+      return Math.max(1200, Math.min(5500, raw));
+    }
+
+    function updateWaterProfile() {
+      const age = Number(document.getElementById('userAgeInput').value) || 25;
+      const weight = Number(document.getElementById('userWeightInput').value) || 65;
+      const activityExtra = Number(document.getElementById('userActivityInput').value) || 0;
+
+      appState.waterProfile.age = age;
+      appState.waterProfile.weight = weight;
+      appState.waterProfile.activityExtra = activityExtra;
+      appState.waterProfile.dailyGoalMl = calculateScientificWaterGoal(age, weight, activityExtra);
+
+      saveAppState();
+      renderWaterSection();
+    }
+
+    function logWaterIntake(amountMl, vesselName) {
+      const ml = Number(amountMl);
+      if (!ml || ml <= 0) return;
+
+      appState.waterToday.totalMl += ml;
+      appState.waterProfile.lastDrinkTimestamp = Date.now();
+      appState.waterToday.logs.unshift({
+        id: 'w-' + Date.now(),
+        ml,
+        vessel: vesselName,
+        time: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
+      });
+
+      saveAppState();
+      renderWaterSection();
+      showToast(`💧 +${ml} ml (${vesselName}) যোগ করা হয়েছে!`, 'success');
+    }
+
+    function logCustomWater() {
+      const inp = document.getElementById('customWaterMl');
+      const val = Number(inp.value);
+      if (!val || val <= 0) {
+        showToast('সঠিক মিলিলিটার (ml) সংখ্যা লিখুন', 'warn');
+        return;
+      }
+      logWaterIntake(val, `কাস্টম পাত্র (${val}ml)`);
+      inp.value = '';
+    }
+
+    function deleteWaterLog(logId) {
+      const item = appState.waterToday.logs.find(l => l.id === logId);
+      if (!item) return;
+      appState.waterToday.totalMl = Math.max(0, appState.waterToday.totalMl - item.ml);
+      appState.waterToday.logs = appState.waterToday.logs.filter(l => l.id !== logId);
+      saveAppState();
+      renderWaterSection();
+    }
+
+    function resetTodayWater() {
+      appState.waterToday = { totalMl: 0, logs: [] };
+      saveAppState();
+      renderWaterSection();
+      showToast('আজকের পানির হিসাব রিসেট করা হয়েছে।', 'info');
+    }
+
+    function saveWaterInterval() {
+      const mins = Number(document.getElementById('waterIntervalSelect').value);
+      appState.waterProfile.intervalMinutes = mins;
+      appState.waterProfile.lastDrinkTimestamp = Date.now();
+      saveAppState();
+      showToast(mins > 0 ? `⏰ প্রতি ${mins} মিনিট পর পানির অ্যালার্ম বাজবে।` : 'পানির অ্যালার্ম বন্ধ করা হয়েছে।', 'info');
+    }
+
+    function renderWaterSection() {
+      const { age, weight, activityExtra, dailyGoalMl, intervalMinutes } = appState.waterProfile;
+      const { totalMl, logs } = appState.waterToday;
+
+      const ageEl = document.getElementById('userAgeInput');
+      const weightEl = document.getElementById('userWeightInput');
+      if (document.activeElement !== ageEl) ageEl.value = age;
+      if (document.activeElement !== weightEl) weightEl.value = weight;
+      document.getElementById('userActivityInput').value = String(activityExtra);
+      document.getElementById('waterIntervalSelect').value = String(intervalMinutes);
+
+      document.getElementById('waterRecommendedBadge').textContent = `${(dailyGoalMl / 1000).toFixed(2)} লিটার / দিন`;
+      document.getElementById('waterCurrentMl').textContent = totalMl;
+      document.getElementById('waterGoalMl').textContent = dailyGoalMl;
+
+      const remain = Math.max(0, dailyGoalMl - totalMl);
+      const glassesLeft = Math.ceil(remain / 250);
+      document.getElementById('waterRemainText').textContent =
+        remain > 0 ? `আরও ${remain} ml (${glassesLeft} গ্লাস) বাকি` : '🎉 আজকের লক্ষ্য পূরণ হয়েছে!';
+
+      // Real-time recommendation per hour (16 waking hours)
+      const perHourMl = Math.round(dailyGoalMl / 16);
+      document.getElementById('waterScheduleHint').innerHTML = `
+        <i class="fa-regular fa-bell text-cyan-500 mr-1"></i>
+        <span>তোমার বয়স (${age}) ও ওজন (${weight}kg) অনুযায়ী প্রতি ঘণ্টায় প্রায় <strong>${perHourMl} ml</strong> পানি পান করা প্রয়োজন।</span>
+      `;
+
+      const pct = Math.min(100, Math.round((totalMl / dailyGoalMl) * 100));
+      document.getElementById('waterProgressBar').style.width = `${pct}%`;
+
+      const listEl = document.getElementById('waterHistoryList');
+      if (logs.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-500 dark:text-slate-400 text-center py-4">আজ এখনো কোনো পানি পানের রেকর্ড যোগ করা হয়নি। উপরে গ্লাস বা বোতলে ট্যাপ করো।</p>`;
+      } else {
+        listEl.innerHTML = logs.map(item => `
+          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl app-subcard text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-glass-water text-cyan-500 shrink-0"></i>
+              <div class="min-w-0">
+                <p class="font-bold text-slate-900 dark:text-white truncate">${escapeHtml(item.vessel)}</p>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">সময়: ${escapeHtml(item.time)}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="font-extrabold text-cyan-600 dark:text-cyan-400">+${item.ml} ml</span>
+              <button onclick="deleteWaterLog('${item.id}')" class="text-slate-400 hover:text-rose-500 p-1">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    /********************************************************************
+     * TAB 4: DOCTOR PRESCRIPTION & MEDICINE ALARM MANAGER
+     ********************************************************************/
+    function addMedicineSchedule() {
+      const nameEl = document.getElementById('medNameInput');
+      const doseEl = document.getElementById('medDoseInput');
+      const timeEl = document.getElementById('medTimeInput');
+      const mealEl = document.getElementById('medMealRule');
+      const noteEl = document.getElementById('medDoctorNote');
+
+      const name = nameEl.value.trim();
+      const dose = doseEl.value.trim() || '১টি ডোজ';
+      const time = timeEl.value || '09:00';
+
+      if (!name) {
+        showToast('অনুগ্রহ করে ওষুধের নাম লিখুন!', 'warn');
+        return;
+      }
+
+      appState.medicines.push({
+        id: 'med-' + Date.now(),
+        name,
+        dose,
+        time,
+        mealRule: mealEl.value,
+        doctorNote: noteEl.value.trim(),
+        takenToday: false,
+        lastTriggeredDate: ''
+      });
+
+      nameEl.value = '';
+      doseEl.value = '';
+      noteEl.value = '';
+      saveAppState();
+      renderMedsList();
+      showToast(`💊 "${name}" (${time}) অ্যালার্মসহ যোগ করা হয়েছে!`, 'success');
+    }
+
+    function toggleMedTaken(medId, forceValue = null) {
+      const med = appState.medicines.find(m => m.id === medId);
+      if (!med) return;
+      med.takenToday = forceValue !== null ? forceValue : !med.takenToday;
+      saveAppState();
+      renderMedsList();
+      if (med.takenToday) {
+        showToast(`✅ "${med.name}" খাওয়া সম্পন্ন হয়েছে!`, 'success');
+      }
+    }
+
+    function deleteMedicine(medId) {
+      appState.medicines = appState.medicines.filter(m => m.id !== medId);
+      saveAppState();
+      renderMedsList();
+      showToast('ওষুধটি তালিকা থেকে মুছে ফেলা হয়েছে।', 'info');
+    }
+
+    function resetDailyMedsTaken() {
+      appState.medicines.forEach(m => { m.takenToday = false; });
+      saveAppState();
+      renderMedsList();
+      showToast('সব ওষুধের ডোজ নতুন দিনের জন্য রিসেট করা হয়েছে।', 'info');
+    }
+
+    function renderMedsList() {
+      const container = document.getElementById('medsListContainer');
+      if (appState.medicines.length === 0) {
+        container.innerHTML = `
+          <div class="app-card rounded-2xl p-6 text-center space-y-1.5">
+            <i class="fa-solid fa-prescription-bottle-medical text-rose-400 text-xl"></i>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">কোনো ওষুধ যোগ করা নেই</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">ডাক্তারের প্রেসক্রিপশন অনুযায়ী উপরে ওষুধের নাম ও সময় যোগ করলে সঠিক সময়ে অ্যালার্ম বাজবে।</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sorted = [...appState.medicines].sort((a, b) => a.time.localeCompare(b.time));
+      container.innerHTML = sorted.map(med => `
+        <div class="app-card rounded-2xl p-3.5 border ${med.takenToday ? 'border-emerald-500/40' : ''} flex items-start justify-between gap-2.5">
+          <div class="flex items-start gap-2.5 min-w-0 flex-1">
+            <button onclick="toggleMedTaken('${med.id}')" class="mt-0.5 w-7 h-7 shrink-0 rounded-xl flex items-center justify-center border ${med.takenToday ? 'bg-emerald-500 border-emerald-400 text-white' : 'app-subcard text-slate-400'}">
+              <i class="fa-solid fa-check text-xs"></i>
+            </button>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <h4 class="text-xs sm:text-sm font-extrabold ${med.takenToday ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white'} break-words">${escapeHtml(med.name)}</h4>
+                <span class="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-300 font-mono text-[11px] font-bold">⏰ ${escapeHtml(med.time)}</span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">${escapeHtml(med.dose)} • <span class="text-amber-600 dark:text-amber-300 font-semibold">${escapeHtml(med.mealRule)}</span></p>
+              ${med.doctorNote ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 break-words"><i class="fa-solid fa-user-doctor mr-1"></i>${escapeHtml(med.doctorNote)}</p>` : ''}
+            </div>
+          </div>
+          <button onclick="deleteMedicine('${med.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 text-xs shrink-0">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    /********************************************************************
+     * REAL-TIME ALARM SCHEDULER (CHECKS EVERY 15 SECONDS)
+     ********************************************************************/
+    function checkScheduledAlarms() {
+      const now = new Date();
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const todayKey = now.toISOString().slice(0, 10);
+
+      // 1. Check Medicine Alarms
+      appState.medicines.forEach(med => {
+        if (!med.takenToday && med.time === currentHHMM && med.lastTriggeredDate !== `${todayKey}-${currentHHMM}`) {
+          med.lastTriggeredDate = `${todayKey}-${currentHHMM}`;
+          saveAppState();
+          triggerAlarmModal({
+            badge: '💊 Medicine Alarm',
+            title: `ওষুধ খাওয়ার সময়: ${med.name}`,
+            subtitle: `ডোজ: ${med.dose} (${med.mealRule}) ${med.doctorNote ? '— ' + med.doctorNote : ''}`,
+            type: 'med',
+            metaId: med.id
+          });
+        }
+      });
+
+      // 2. Check Periodic Water Reminder
+      const intervalMins = Number(appState.waterProfile.intervalMinutes);
+      if (intervalMins > 0 && appState.waterToday.totalMl < appState.waterProfile.dailyGoalMl) {
+        const elapsedMs = Date.now() - (appState.waterProfile.lastDrinkTimestamp || Date.now());
+        if (elapsedMs >= intervalMins * 60 * 1000) {
+          appState.waterProfile.lastDrinkTimestamp = Date.now();
+          saveAppState();
+          triggerAlarmModal({
+            badge: '💧 Hydration Alarm',
+            title: 'পানি খাওয়ার সময় হয়েছে!',
+            subtitle: `তোমার বয়স ও ওজন অনুযায়ী প্রতিদিনের লক্ষ্য পূরণ করতে এখন ১ গ্লাস (250ml) পানি পান করো।`,
+            type: 'water'
+          });
+        }
+      }
+    }
+
+    /********************************************************************
+     * TAB 5: OTA UPDATER, WORKFLOW YAML COPIER & BACKUP
+     ********************************************************************/
+    function saveGithubConfig() {
+      appState.githubRepo = document.getElementById('ghRepoInput').value.trim();
+      appState.githubBranch = document.getElementById('ghBranchInput').value.trim() || 'main';
+      saveAppState();
+      showToast('GitHub Repository সেভ করা হয়েছে!', 'success');
+    }
+
+    async function performLiveOtaUpdate() {
+      const repo = appState.githubRepo.trim();
+      const branch = appState.githubBranch.trim() || 'main';
+      if (!repo || !repo.includes('/')) {
+        showToast('প্রথমে তোমার GitHub "username/repo-name" বক্সে লিখো!', 'warn');
+        return;
+      }
+
+      const btn = document.getElementById('otaSyncBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Checking GitHub...';
+
+      try {
+        const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/index.html?t=${Date.now()}`;
+        const res = await fetch(rawUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const latestHtml = await res.text();
+
+        if (latestHtml && latestHtml.includes('LIFESYNC_PRO_STATE_V2')) {
+          localStorage.setItem('LIFESYNC_OTA_CACHED_HTML', latestHtml);
+          showToast('🚀 নতুন আপডেট পাওয়া গেছে! আনইনস্টল ছাড়াই আপডেট হচ্ছে...', 'success');
+          setTimeout(() => {
+            document.open();
+            document.write(latestHtml);
+            document.close();
+          }, 1000);
+        } else {
+          showToast('ফাইল পাওয়া গেছে কিন্তু ভ্যালিড কোড নয়।', 'warn');
+        }
+      } catch (err) {
+        showToast('GitHub থেকে ফাইল পাওয়া যায়নি। রিপোজিটরি Public কিনা চেক করো।', 'warn');
+      } finally {
+        btn.innerHTML = originalText;
+      }
+    }
+
+    async function downloadLatestReleaseApk() {
+      const repo = appState.githubRepo.trim();
+      if (!repo || !repo.includes('/')) {
+        showToast('প্রথমে তোমার GitHub "username/repo-name" বক্সে লিখো!', 'warn');
+        return;
+      }
+      try {
+        const apiUrl = `https://api.github.com/repos/${repo}/releases/latest`;
+        const res = await fetch(apiUrl);
+        if (res.ok) {
+          const data = await res.json();
+          const apkAsset = (data.assets || []).find(a => a.name.endsWith('.apk'));
+          if (apkAsset && apkAsset.browser_download_url) {
+            window.open(apkAsset.browser_download_url, '_blank');
+            showToast('লেটেস্ট Signed APK ডাউনলোড শুরু হয়েছে!', 'success');
+            return;
+          }
+        }
+        window.open(`https://github.com/${repo}/releases`, '_blank');
+      } catch (e) {
+        window.open(`https://github.com/${repo}/releases`, '_blank');
+      }
+    }
+
+    function copyWorkflowYaml() {
+      const yamlText = `name: Build Signed LifeSync Pro Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Web Assets & Capacitor Project
+        run: |
+          mkdir -p www
+          cp index.html www/index.html
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.lifesync.pro.companion",
+            "appName": "LifeSync Pro",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "https",
+              "cleartext": true
+            }
+          }
+          EOF
+          npx cap add android
+          npx cap copy android
+
+      - name: Configure Android Permissions & Version Auto-Increment
+        run: |
+          VERSION_CODE=\${GITHUB_RUN_NUMBER:-1}
+          sed -i "s/versionCode 1/versionCode \${VERSION_CODE}/g" android/app/build.gradle
+          sed -i "s/versionName \\"1.0\\"/versionName \\"2.5.\${VERSION_CODE}\\"/g" android/app/build.gradle
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/<application/<uses-permission android:name="android.permission.VIBRATE" \\/>\\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \\/>\\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \\/>\\n    <application/g' "\$MANIFEST"
+
+      - name: Ensure Persistent Keystore (No Uninstall Needed on Upgrade)
+        run: |
+          KEYSTORE_FILE="lifesync-release.keystore"
+          if [ ! -f "\$KEYSTORE_FILE" ]; then
+            keytool -genkeypair -v \\
+              -keystore "\$KEYSTORE_FILE" \\
+              -alias lifesync_key \\
+              -keyalg RSA \\
+              -keysize 2048 \\
+              -validity 10000 \\
+              -storepass lifesync2026pass \\
+              -keypass lifesync2026pass \\
+              -dname "CN=LifeSyncPro, OU=Mobile, O=LifeSync, L=Dhaka, S=BD, C=BD"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "\$KEYSTORE_FILE"
+            git commit -m "chore: save persistent android keystore [skip ci]" || true
+            git push || true
+          fi
+          cp "\$KEYSTORE_FILE" android/app/lifesync-release.keystore
+
+      - name: Build & Sign APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \\
+            -Pandroid.injected.signing.store.file="\$(pwd)/app/lifesync-release.keystore" \\
+            -Pandroid.injected.signing.store.password="lifesync2026pass" \\
+            -Pandroid.injected.signing.key.alias="lifesync_key" \\
+            -Pandroid.injected.signing.key.password="lifesync2026pass"
+          cp app/build/outputs/apk/release/app-release.apk ../LifeSync-Pro-Latest.apk
+
+      - name: Upload Signed APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeSync-Pro-Signed-APK
+          path: LifeSync-Pro-Latest.apk
+
+      - name: Publish Latest APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: always()
+        with:
+          tag_name: v2.5.\${{ github.run_number }}
+          name: "LifeSync Pro v2.5.\${{ github.run_number }}"
+          body: "Automated signed APK build. Install directly over your existing app without uninstalling."
+          files: LifeSync-Pro-Latest.apk`;
+
+      const temp = document.createElement('textarea');
+      temp.value = yamlText;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showToast('✅ build-apk.yml এর সম্পূর্ণ কোড কপি হয়েছে!', 'success');
+    }
+
+    function exportAllData() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `LifeSync-Backup-${TODAY_STR}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('ব্যাকআপ ফাইল ডাউনলোড সম্পন্ন হয়েছে!', 'success');
+    }
+
+    function importAllData(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          appState = { ...structuredClone(defaultState), ...imported };
+          saveAppState();
+          initUI();
+          showToast('🎉 তোমার সব ডেটা সফলভাবে রিস্টোর হয়েছে!', 'success');
+        } catch (err) {
+          showToast('ভুল ব্যাকআপ ফাইল!', 'warn');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(str = '') {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function initUI() {
+      applyTheme(appState.theme || 'dark');
+      updateLiveClock();
+
+      document.getElementById('ghRepoInput').value = appState.githubRepo || '';
+      document.getElementById('ghBranchInput').value = appState.githubBranch || 'main';
+
+      selectMood(appState.selectedMood || '😊 ফুরফুরে');
+      renderDiaryList();
+      renderWaterSection();
+      renderMedsList();
+      updateDashboardCounters();
+      resetBreakTimer();
+      switchTab(currentTab);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initUI();
+      setInterval(updateLiveClock, 1000);
+      setInterval(checkScheduledAlarms, 15000);
+    });
+  </script>
+</body>
+</html>
