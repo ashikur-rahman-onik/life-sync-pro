@@ -607,7 +607,7 @@
       theme: 'dark', // 'dark' or 'light'
       lastDate: TODAY_STR,
       selectedMood: '😊 ফুরফুরে',
-      githubRepo: '',
+      githubRepo: 'ashikur-rahman-onik/life-sync-pro',
       githubBranch: 'main',
       waterProfile: {
         age: 25,
@@ -1446,45 +1446,33 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java JDK 17
+      - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Prepare Web Assets & Capacitor Project
+      - name: Accept Android SDK Licenses (Built-in Runner SDK)
         run: |
+          yes | \$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Prepare Web Assets & Capacitor 6 Project
+        run: |
+          rm -rf www android package.json package-lock.json capacitor.config.json
           mkdir -p www
           cp index.html www/index.html
-          if [ ! -f package.json ]; then
-            npm init -y
-          fi
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.lifesync.pro.companion",
             "appName": "LifeSync Pro",
             "webDir": "www",
-            "bundledWebRuntime": false,
-            "server": {
-              "androidScheme": "https",
-              "cleartext": true
-            }
+            "bundledWebRuntime": false
           }
           EOF
           npx cap add android
           npx cap copy android
-
-      - name: Configure Android Permissions & Version Auto-Increment
-        run: |
-          VERSION_CODE=\${GITHUB_RUN_NUMBER:-1}
-          sed -i "s/versionCode 1/versionCode \${VERSION_CODE}/g" android/app/build.gradle
-          sed -i "s/versionName \\"1.0\\"/versionName \\"2.5.\${VERSION_CODE}\\"/g" android/app/build.gradle
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i 's/<application/<uses-permission android:name="android.permission.VIBRATE" \\/>\\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \\/>\\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \\/>\\n    <application/g' "\$MANIFEST"
 
       - name: Ensure Persistent Keystore (No Uninstall Needed on Upgrade)
         run: |
@@ -1499,6 +1487,7 @@ jobs:
               -storepass lifesync2026pass \\
               -keypass lifesync2026pass \\
               -dname "CN=LifeSyncPro, OU=Mobile, O=LifeSync, L=Dhaka, S=BD, C=BD"
+
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add "\$KEYSTORE_FILE"
@@ -1507,15 +1496,40 @@ jobs:
           fi
           cp "\$KEYSTORE_FILE" android/app/lifesync-release.keystore
 
-      - name: Build & Sign APK
+      - name: Configure Gradle Signing & Android Permissions
+        run: |
+          VERSION_CODE=\${GITHUB_RUN_NUMBER:-1}
+          sed -i "s/versionCode 1/versionCode \${VERSION_CODE}/g" android/app/build.gradle
+          sed -i "s/versionName \\"1.0\\"/versionName \\"2.5.\${VERSION_CODE}\\"/g" android/app/build.gradle
+
+          cat << 'EOF' >> android/app/build.gradle
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('lifesync-release.keystore')
+                      storePassword 'lifesync2026pass'
+                      keyAlias 'lifesync_key'
+                      keyPassword 'lifesync2026pass'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          EOF
+
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/<application/<uses-permission android:name="android.permission.VIBRATE" \\/>\\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \\/>\\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \\/>\\n    <application/g' "\$MANIFEST"
+
+      - name: Build Signed Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease \\
-            -Pandroid.injected.signing.store.file="\$(pwd)/app/lifesync-release.keystore" \\
-            -Pandroid.injected.signing.store.password="lifesync2026pass" \\
-            -Pandroid.injected.signing.key.alias="lifesync_key" \\
-            -Pandroid.injected.signing.key.password="lifesync2026pass"
+          ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk ../LifeSync-Pro-Latest.apk
 
       - name: Upload Signed APK Artifact
@@ -1526,11 +1540,11 @@ jobs:
 
       - name: Publish Latest APK to GitHub Releases
         uses: softprops/action-gh-release@v2
-        if: always()
+        if: success()
         with:
           tag_name: v2.5.\${{ github.run_number }}
           name: "LifeSync Pro v2.5.\${{ github.run_number }}"
-          body: "Automated signed APK build. Install directly over your existing app without uninstalling."
+          body: "Automated signed APK build for LifeSync Pro. Install directly over your existing app without uninstalling."
           files: LifeSync-Pro-Latest.apk`;
 
       const temp = document.createElement('textarea');
