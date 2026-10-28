@@ -1,0 +1,109 @@
+name: Build Signed LifeSync Pro Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Web Assets & Capacitor Project
+        run: |
+          mkdir -p www
+          cp index.html www/index.html
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.lifesync.pro.companion",
+            "appName": "LifeSync Pro",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "https",
+              "cleartext": true
+            }
+          }
+          EOF
+          npx cap add android
+          npx cap copy android
+
+      - name: Configure Android Permissions & Version Auto-Increment
+        run: |
+          VERSION_CODE=${GITHUB_RUN_NUMBER:-1}
+          sed -i "s/versionCode 1/versionCode ${VERSION_CODE}/g" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"2.5.${VERSION_CODE}\"/g" android/app/build.gradle
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/<application/<uses-permission android:name="android.permission.VIBRATE" \/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \/>\n    <application/g' "$MANIFEST"
+
+      - name: Ensure Persistent Keystore (No Uninstall Needed on Upgrade)
+        run: |
+          KEYSTORE_FILE="lifesync-release.keystore"
+          if [ ! -f "$KEYSTORE_FILE" ]; then
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE_FILE" \
+              -alias lifesync_key \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass lifesync2026pass \
+              -keypass lifesync2026pass \
+              -dname "CN=LifeSyncPro, OU=Mobile, O=LifeSync, L=Dhaka, S=BD, C=BD"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "$KEYSTORE_FILE"
+            git commit -m "chore: save persistent android keystore [skip ci]" || true
+            git push || true
+          fi
+          cp "$KEYSTORE_FILE" android/app/lifesync-release.keystore
+
+      - name: Build & Sign APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/app/lifesync-release.keystore" \
+            -Pandroid.injected.signing.store.password="lifesync2026pass" \
+            -Pandroid.injected.signing.key.alias="lifesync_key" \
+            -Pandroid.injected.signing.key.password="lifesync2026pass"
+          cp app/build/outputs/apk/release/app-release.apk ../LifeSync-Pro-Latest.apk
+
+      - name: Upload Signed APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeSync-Pro-Signed-APK
+          path: LifeSync-Pro-Latest.apk
+
+      - name: Publish Latest APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: always()
+        with:
+          tag_name: v2.5.${{ github.run_number }}
+          name: "LifeSync Pro v2.5.${{ github.run_number }}"
+          body: "Automated signed APK build. Install directly over your existing app without uninstalling."
+          files: LifeSync-Pro-Latest.apk
